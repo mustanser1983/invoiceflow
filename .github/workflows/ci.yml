@@ -1,0 +1,100 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main, develop]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  api:
+    name: API (lint, typecheck, test, build, migrate)
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: invoiceflow
+          POSTGRES_PASSWORD: invoiceflow
+          POSTGRES_DB: invoiceflow_ci
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U invoiceflow"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      DATABASE_URL: postgresql://invoiceflow:invoiceflow@localhost:5432/invoiceflow_ci
+      DATABASE_URL_DIRECT: postgresql://invoiceflow:invoiceflow@localhost:5432/invoiceflow_ci
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: npm run format:check
+      - run: npm run lint -w apps/api
+      - run: npm run typecheck -w apps/api
+      - run: npm test -w apps/api
+      - run: npm run build -w apps/api
+      - name: Apply migrations to a fresh database
+        run: npm run db:migrate -w apps/api
+      - name: Health check against the real database
+        run: |
+          PORT=3000 node apps/api/dist/main.js &
+          for i in $(seq 1 20); do curl -fs localhost:3000/health >/dev/null && break; sleep 1; done
+          curl -fs localhost:3000/health
+          curl -fs localhost:3000/health/db
+
+  admin:
+    name: Admin (lint, typecheck, build)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: npm run lint -w apps/admin
+      - run: npm run typecheck -w apps/admin
+      - run: npm run build -w apps/admin
+
+  mobile:
+    name: Mobile (analyze, test, build APK)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/mobile
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      # Until android/ is committed (see apps/mobile/README.md), generate it here.
+      - name: Generate Android project if missing
+        run: |
+          if [ ! -d android ]; then
+            flutter create . --platforms=android --org ae.invoiceflow --project-name invoiceflow
+            # flutter create adds a template counter test that doesn't match this app.
+            rm -f test/widget_test.dart
+          fi
+      - run: flutter pub get
+      - run: flutter analyze
+      - run: flutter test
+      - run: flutter build apk --debug --dart-define-from-file=config/dev.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: invoiceflow-debug-apk
+          path: apps/mobile/build/app/outputs/flutter-apk/app-debug.apk
+          retention-days: 7
