@@ -86,6 +86,8 @@ jobs:
         run: |
           if [ ! -d android ]; then
             flutter create . --platforms=android --org ae.invoiceflow --project-name invoiceflow
+            # flutter create adds a template counter test that doesn't match this app.
+            rm -f test/widget_test.dart
           fi
       - run: flutter pub get
       - run: flutter analyze

@@ -1,4 +1,4 @@
-/// Build-time configuration, passed with --dart-define-from-file=config/<env>.json.
+/// Build-time configuration, passed with `--dart-define-from-file=config/<env>.json`.
 enum AppEnvironment { dev, staging, prod }
 
 class AppConfig {
