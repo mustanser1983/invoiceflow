@@ -1,0 +1,14 @@
+{
+  "@@locale": "en",
+  "appTitle": "Invoiceflow",
+  "navHome": "Home",
+  "navSales": "Sales",
+  "navPurchases": "Purchases",
+  "navBanking": "Banking",
+  "navMore": "More",
+  "comingSoon": "Coming soon",
+  "environmentLabel": "Environment: {name}",
+  "@environmentLabel": {
+    "placeholders": { "name": { "type": "String" } }
+  }
+}

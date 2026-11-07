@@ -30,6 +30,8 @@
 
 All versions pinned (lockfiles committed). Upgrades go through a dependency-review PR.
 
+**Sprint 0 notes.** NestJS 12 is published as ES modules only, so `apps/api` is an ES-module package (`"type": "module"`, `.js` extensions on relative imports) and Jest runs in its ESM mode (`--experimental-vm-modules`). Dev mode uses `tsc-watch` rather than esbuild-based runners, because Nest's dependency injection needs `emitDecoratorMetadata`. The monorepo uses npm workspaces.
+
 ---
 
 ## 2. System architecture
