@@ -7,6 +7,7 @@ import {
   Logger,
 } from '@nestjs/common';
 import type { Response } from 'express';
+import { pgErrorCode } from './pg-errors.js';
 
 export interface ErrorDetail {
   field: string;
@@ -39,16 +40,6 @@ const PG_ERRORS: Record<string, { status: number; code: string; message: string 
   },
   '42501': { status: 404, code: 'NOT_FOUND', message: 'Not found' },
 };
-
-function pgErrorCode(err: unknown): string | undefined {
-  // Drizzle wraps driver errors; the pg error (with .code) is on .cause.
-  for (let e: unknown = err, depth = 0; e && depth < 3; depth++) {
-    const code = (e as { code?: unknown }).code;
-    if (typeof code === 'string' && /^[0-9A-Z]{5}$/.test(code)) return code;
-    e = (e as { cause?: unknown }).cause;
-  }
-  return undefined;
-}
 
 /** Converts all errors to the standard error envelope. Never leaks internal error details. */
 @Catch()

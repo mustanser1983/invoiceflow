@@ -15,6 +15,7 @@ import {
 import { users } from '../../infrastructure/db/schema/index.js';
 import { setContext } from '../../infrastructure/db/transaction-manager.js';
 import { ctx, currentUser } from '../../common/context/request-context.js';
+import { isUniqueViolation } from '../../common/pg-errors.js';
 import { AuditService } from '../audit/audit.service.js';
 import { listMemberships, type MembershipView } from '../access/memberships.js';
 import type { RegisterInput } from './auth.dto.js';
@@ -22,15 +23,6 @@ import type { RegisterInput } from './auth.dto.js';
 export interface MeView {
   user: { id: string; email: string; fullName: string; emailVerified: boolean };
   memberships: MembershipView[];
-}
-
-function isUniqueViolation(err: unknown, constraint: string): boolean {
-  for (let e: unknown = err, depth = 0; e && depth < 3; depth++) {
-    const pg = e as { code?: unknown; constraint?: unknown };
-    if (pg.code === '23505' && pg.constraint === constraint) return true;
-    e = (e as { cause?: unknown }).cause;
-  }
-  return false;
 }
 
 @Injectable()

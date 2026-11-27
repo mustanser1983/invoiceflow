@@ -21,7 +21,14 @@ All notable changes to Invoiceflow are recorded here. Format follows [Keep a Cha
   - Endpoints: `POST /auth/register`, `GET /auth/me`, `POST /auth/logout`, `POST /tenants`, `GET /tenants`, `GET /tenants/:id`, `PATCH /tenants/:id`.
   - Integration tests against real Postgres: RLS coverage, app-role privileges, pooled-connection context leak, cross-tenant reads and writes over HTTP, permission grants, audit rows.
 
+- Sprint 2 — onboarding and settings (S2-1 – S2-5, S2-8 – S2-10, backend):
+  - Migrations `0004`–`0005`: `tax_codes`, `tax_rates` (no overlapping rates), `tenant_tax_settings` with RLS; seeded UAE codes SR, ZR, EX, OS, SR-NR, RC (pending tax-adviser sign-off); keep-an-owner trigger; one pending invitation per email; `app.find_invitation` lookup.
+  - Endpoints: `GET/PATCH /tax/settings`, `GET/POST /tax/codes`, `GET/PATCH /tenants/:id/settings`, `GET/PATCH /tenants/:id/numbering`, `POST /tenants/:id/complete-onboarding`, `GET /users`, `GET /users/invitations`, `POST /users/invite`, `DELETE /users/invitations/:id`, `POST /invitations/accept`, `PATCH /users/:userId`, `GET /roles`, `GET /permissions`.
+  - New businesses get tax settings (not VAT registered).
+  - `docs/TAX_RULES_UAE.md` draft.
+
 ### Changed
 - ADR-0001 – 0003 accepted (2026-11-27). CODEOWNERS points at @mustanser1983.
 - CI Postgres 16 → 18 (matches Neon); CI now runs integration tests against a throwaway database.
+- CI pins Flutter 3.47.9: Flutter 3.50 deprecates `package:flutter/material.dart` in favour of `package:material_ui`, which fails `flutter analyze`.
 - RLS uses `ENABLE` plus `SET LOCAL ROLE invoiceflow_app` instead of `FORCE` (DATABASE_ERD.md §2.1).
