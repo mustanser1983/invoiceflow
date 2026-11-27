@@ -145,7 +145,7 @@ describeWithDb('Auth, tenants and isolation over HTTP (S1-2 – S1-10)', () => {
         `SELECT document_type, prefix, next_number FROM document_sequences WHERE tenant_id = $1`,
         [tenantA],
       );
-      expect(seq).toHaveLength(10);
+      expect(seq).toHaveLength(11);
       expect(seq).toEqual(
         expect.arrayContaining([{ document_type: 'invoice', prefix: 'INV-', next_number: '1' }]),
       );

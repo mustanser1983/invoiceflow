@@ -31,6 +31,10 @@ export async function migrateTestDb(pool: Pool): Promise<void> {
 export async function resetTestDb(pool: Pool): Promise<void> {
   await pool.query(`
     DELETE FROM audit_logs;
+    DELETE FROM items;
+    DELETE FROM customers;
+    DELETE FROM suppliers;
+    DELETE FROM expense_categories;
     DELETE FROM tenant_tax_settings;
     DELETE FROM tax_rates WHERE tax_code_id IN (SELECT id FROM tax_codes WHERE tenant_id IS NOT NULL);
     DELETE FROM tax_codes WHERE tenant_id IS NOT NULL;

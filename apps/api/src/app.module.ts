@@ -11,6 +11,8 @@ import { HealthModule } from './modules/health/health.module.js';
 import { TaxModule } from './modules/tax/tax.module.js';
 import { TenantsModule } from './modules/tenants/tenants.module.js';
 import { UsersModule } from './modules/users/users.module.js';
+import { PartiesModule } from './modules/parties/parties.module.js';
+import { ItemsModule } from './modules/items/items.module.js';
 
 @Module({
   imports: [
@@ -22,6 +24,8 @@ import { UsersModule } from './modules/users/users.module.js';
     TenantsModule,
     TaxModule,
     UsersModule,
+    PartiesModule,
+    ItemsModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: RateLimitGuard },

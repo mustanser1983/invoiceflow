@@ -188,9 +188,9 @@ describeWithDb('Onboarding, tax, settings, numbering and users (Sprint 2)', () =
   });
 
   describe('document numbering (S2-5)', () => {
-    it('shows the ten sequences with a preview', async () => {
+    it('shows the eleven sequences with a preview', async () => {
       const res = await as('olivia').get(`/api/v1/tenants/${tenantA}/numbering`).expect(200);
-      expect(res.body.data).toHaveLength(10);
+      expect(res.body.data).toHaveLength(11);
       expect(res.body.data[1]).toMatchObject({
         documentType: 'invoice',
         prefix: 'INV-',

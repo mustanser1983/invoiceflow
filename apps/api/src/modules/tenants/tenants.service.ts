@@ -8,6 +8,7 @@ import { and, eq, isNull, sql } from 'drizzle-orm';
 import { randomUUID } from 'node:crypto';
 import {
   documentSequences,
+  expenseCategories,
   roles,
   tenantMemberships,
   tenants,
@@ -20,6 +21,7 @@ import { AuditService } from '../audit/audit.service.js';
 import { listMemberships, type MembershipView } from '../access/memberships.js';
 import { createDefaultTaxSettings } from '../tax/tax.service.js';
 import {
+  DEFAULT_EXPENSE_CATEGORIES,
   DEFAULT_SEQUENCES,
   DEFAULT_SETTINGS,
   formatDocumentNumber,
@@ -104,6 +106,9 @@ export class TenantsService {
       .insert(documentSequences)
       .values(DEFAULT_SEQUENCES.map((s) => ({ tenantId: id, ...s, nextNumber: 1, padding: 5 })));
     await createDefaultTaxSettings(tx, id, tenant.countryCode);
+    await tx
+      .insert(expenseCategories)
+      .values(DEFAULT_EXPENSE_CATEGORIES.map((c) => ({ tenantId: id, ...c, isSystem: true })));
 
     await this.audit.record({
       tenantId: id,

@@ -315,18 +315,20 @@ Sign-up, sign-in, password reset and email verification are done by the **Fireba
 | GET | `/permissions` | `role.view` *(Sprint 2)* |
 
 ### 8.4 Master data
+List endpoints take `page`, `pageSize` (≤ 100), `search` (case-insensitive; `%` and `_` are literal), `status=active|inactive|all` (default `active`) and `sort` (`name`, `code`, `createdAt`, `-` for descending), and return `meta`.
+
 | Method | Path | Permission |
 |---|---|---|
-| GET / POST | `/customers` | `customer.view` / `customer.create` |
-| GET / PATCH | `/customers/:id` | `customer.view` / `customer.update` |
-| POST | `/customers/:id/opening-balance` 🔒 | `customer.update` |
-| GET | `/customers/:id/transactions` | `customer.view` |
-| GET | `/customers/:id/statement?from&to&format=json\|pdf` | `customer.view` |
-| GET | `/customers/duplicates?name&email&trn` | `customer.create` |
-| — | `/suppliers…` | identical set with `supplier.*` |
-| GET / POST | `/items` | `item.view` / `item.create` |
-| GET / PATCH | `/items/:id` | `item.view` / `item.update` |
-| GET / POST / PATCH | `/expense-categories` | `expense.view` / `tenant.settings.update` |
+| GET / POST | `/customers` | `customer.view` / `customer.create` — code optional (auto `CUS-00001`, skipping hand-typed codes); payment terms default to the `sales.default_payment_terms_days` setting; search covers name, code, email, phone, TRN, contact *(Sprint 3)* |
+| GET / PATCH | `/customers/:id` | `customer.view` / `customer.update` — deactivate with `{ status: "inactive" }`; there is no delete *(Sprint 3)* |
+| GET | `/customers/duplicates?name&email&taxRegistrationNumber&excludeId` | `customer.view` — up to 10 possible duplicates with `matchedOn` (similar name via pg_trgm ≥ 0.6, same email, same TRN); a warning only *(Sprint 3)* |
+| POST | `/customers/:id/opening-balance` 🔒 | `customer.update` — moved to Sprint 4/5: it creates an opening-balance invoice, which needs the invoice tables |
+| GET | `/customers/:id/transactions` | `customer.view` — with the first documents (Sprint 4) |
+| GET | `/customers/:id/statement?from&to&format=json|pdf` | `customer.view` — Sprint 5 |
+| — | `/suppliers…` | identical set with `supplier.*`; codes `SUP-00001`; payment terms default to 30 days *(Sprint 3)* |
+| GET / POST | `/items` | `item.view` / `item.create` — code optional (auto `ITM-00001`); prices are decimal strings; `?itemType=product|service`; default tax code must be one the business can use *(Sprint 3)* |
+| GET / PATCH | `/items/:id` | `item.view` / `item.update` *(Sprint 3)* |
+| GET / POST / PATCH | `/expense-categories`, `/expense-categories/:id` | `expense.view` / `tenant.settings.update` — 13 defaults per business; rename or deactivate, no delete *(Sprint 3)* |
 
 ### 8.5 Quotations
 | Method | Path | Permission |

@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import type { DocumentType } from '../../infrastructure/db/schema/index.js';
+import type { DocumentType, ExpenseCategoryType } from '../../infrastructure/db/schema/index.js';
 
 /** Default document numbering per type (TEN-008). Tenants can change prefix and next number. */
 export const DEFAULT_SEQUENCES: ReadonlyArray<{ documentType: DocumentType; prefix: string }> = [
@@ -13,6 +13,30 @@ export const DEFAULT_SEQUENCES: ReadonlyArray<{ documentType: DocumentType; pref
   { documentType: 'transfer', prefix: 'TRF-' },
   { documentType: 'customer', prefix: 'CUS-' },
   { documentType: 'supplier', prefix: 'SUP-' },
+  { documentType: 'item', prefix: 'ITM-' },
+];
+
+/**
+ * Default expense categories (TEN-010, EXP-004). Keep in sync with the back-fill in
+ * drizzle/0007_master_data_rls_and_seed.sql.
+ */
+export const DEFAULT_EXPENSE_CATEGORIES: ReadonlyArray<{
+  name: string;
+  categoryType: ExpenseCategoryType;
+}> = [
+  { name: 'Rent', categoryType: 'operating' },
+  { name: 'Utilities', categoryType: 'operating' },
+  { name: 'Salaries', categoryType: 'operating' },
+  { name: 'Office supplies', categoryType: 'operating' },
+  { name: 'Travel', categoryType: 'operating' },
+  { name: 'Fuel', categoryType: 'operating' },
+  { name: 'Telecom', categoryType: 'operating' },
+  { name: 'Professional fees', categoryType: 'operating' },
+  { name: 'Marketing', categoryType: 'operating' },
+  { name: 'Bank charges', categoryType: 'operating' },
+  { name: 'Repairs', categoryType: 'operating' },
+  { name: 'Cost of goods', categoryType: 'cost_of_sales' },
+  { name: 'Other', categoryType: 'other' },
 ];
 
 export const ONBOARDING_STEPS = [

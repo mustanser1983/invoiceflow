@@ -3,3 +3,4 @@
 export * from './access.js';
 export * from './audit.js';
 export * from './tax.js';
+export * from './master-data.js';

@@ -43,6 +43,20 @@
       "when": 1795790583878,
       "tag": "0005_tax_rls_and_seed",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1795791688397,
+      "tag": "0006_master_data",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1795791696672,
+      "tag": "0007_master_data_rls_and_seed",
+      "breakpoints": true
     }
   ]
 }
