@@ -8,8 +8,8 @@ import * as schema from './schema/index.js';
 export type Database = NodePgDatabase<typeof schema>;
 
 /**
- * Owns the Postgres pool. In Sprint 1 a TransactionManager will wrap every tenant request in a
- * transaction that first runs set_config('app.tenant_id', ..., true). See DATABASE_ERD.md §2.1.
+ * Owns the Postgres pool. Application code must not query `db` directly: use TransactionManager,
+ * which switches to the invoiceflow_app role so row-level security applies (DATABASE_ERD.md §2.1).
  */
 @Injectable()
 export class DbService implements OnModuleDestroy {

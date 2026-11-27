@@ -2,6 +2,7 @@ export interface Env {
   NODE_ENV: 'development' | 'test' | 'staging' | 'production';
   PORT: number;
   DATABASE_URL: string | undefined;
+  FIREBASE_PROJECT_ID: string | undefined;
 }
 
 const NODE_ENVS: ReadonlyArray<Env['NODE_ENV']> = ['development', 'test', 'staging', 'production'];
@@ -18,10 +19,22 @@ export function loadEnv(source: NodeJS.ProcessEnv = process.env): Env {
     throw new Error('PORT must be an integer between 1 and 65535');
   }
 
+  const deployed = nodeEnv === 'staging' || nodeEnv === 'production';
+
   const databaseUrl = source.DATABASE_URL?.trim() || undefined;
-  if (!databaseUrl && (nodeEnv === 'staging' || nodeEnv === 'production')) {
+  if (!databaseUrl && deployed) {
     throw new Error('DATABASE_URL is required in staging and production');
   }
 
-  return { NODE_ENV: nodeEnv, PORT: port, DATABASE_URL: databaseUrl };
+  const firebaseProjectId = source.FIREBASE_PROJECT_ID?.trim() || undefined;
+  if (!firebaseProjectId && deployed) {
+    throw new Error('FIREBASE_PROJECT_ID is required in staging and production');
+  }
+
+  return {
+    NODE_ENV: nodeEnv,
+    PORT: port,
+    DATABASE_URL: databaseUrl,
+    FIREBASE_PROJECT_ID: firebaseProjectId,
+  };
 }

@@ -1,7 +1,11 @@
 import { Controller, Get, ServiceUnavailableException } from '@nestjs/common';
+import { SkipRateLimit } from '../../common/rate-limit.guard.js';
+import { Public } from '../../common/context/decorators.js';
 import { DbService } from '../../infrastructure/db/db.service.js';
 
 @Controller('health')
+@Public()
+@SkipRateLimit()
 export class HealthController {
   constructor(private readonly dbService: DbService) {}
 

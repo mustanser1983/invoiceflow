@@ -95,13 +95,18 @@ Each module: `*.controller.ts`, `*.service.ts`, `*.repository.ts`, `dto/`, `*.sp
 
 ### 3.1 Request pipeline (tenant API)
 
-1. **AuthGuard** — verifies bearer JWT against provider JWKS; resolves `users.id` from `auth_provider_id`.
-2. **TenantGuard** — reads `X-Tenant-Id` header; loads active membership for (user, tenant). No membership → `403 TENANT_ACCESS_DENIED`. The header is a *selector*; authority comes from the membership row.
-3. **SubscriptionGuard** — on write routes, rejects if subscription `suspended`/`cancelled` (`402 SUBSCRIPTION_INACTIVE`) or plan limit exceeded (`402 PLAN_LIMIT_REACHED`).
-4. **PermissionGuard** — `@RequirePermission('invoice.issue')` checked against role permissions.
-5. **TransactionInterceptor** — opens a DB transaction, runs `set_config('app.tenant_id', …, true)` and `app.user_id`, commits/rolls back.
-6. **IdempotencyInterceptor** — on POST routes marked `@Idempotent()`, requires `Idempotency-Key` header; replays stored response on retry, `409` on same key with different body.
-7. **AuditInterceptor** — writes `audit_logs` row in the same transaction for mutating routes.
+*As built in Sprint 1* (`apps/api/src/common/`):
+
+1. **RateLimitGuard** — fixed-window limit per client IP and route (default 300/min; `@RateLimit(10)` on `POST /auth/register`). In-memory, so it's per API instance; move to the edge or a shared store when the API scales out.
+2. **AuthGuard** — verifies the bearer token through the `AuthProvider` (Firebase, ADR-0002). No database access. `@Public()` routes (health checks) skip it.
+3. **RequestContextInterceptor** — opens **one** DB transaction for the whole request via `TransactionManager` (`SET LOCAL ROLE invoiceflow_app` + context), then:
+   - resolves the user from the token's identity; unregistered users get `403 USER_NOT_REGISTERED` except on `@AllowUnregistered()` routes;
+   - on `@TenantScoped()` / `@RequirePermissions(...)` routes, reads the tenant from `X-Tenant-Id` (or a route param), loads the caller's **active membership** in it and the role's permission codes. No membership, a malformed id, or an id that doesn't exist all give the same `403 TENANT_ACCESS_DENIED`. The header is only a *selector*; authority comes from the membership row, and RLS confines the transaction to that tenant;
+   - checks required permission codes → `403 PERMISSION_DENIED`;
+   - runs the handler inside the same transaction, with the context available through `AsyncLocalStorage` (`ctx()`); any error rolls everything back.
+4. **AuditService** — services call `audit.record(...)` explicitly, so rows carry meaningful before/after data. Rows are written in the request transaction and commit or roll back with it; secret-looking keys are redacted.
+
+*Still to come:* **SubscriptionGuard** (Sprint 9: `402 SUBSCRIPTION_INACTIVE` / `PLAN_LIMIT_REACHED` on writes) and **IdempotencyInterceptor** (with the first posting endpoints in Sprint 4/5: `Idempotency-Key` required, stored response replayed on retry, `409` on the same key with a different body).
 
 ### 3.2 Posting service
 
@@ -265,23 +270,21 @@ Default mapping: Owner = all; Administrator = all except `subscription.manage`; 
 🔒 = requires `Idempotency-Key`. Permission shown in brackets.
 
 ### 8.1 Auth & profile
+Sign-up, sign-in, password reset and email verification are done by the **Firebase client SDK** (ADR-0002); the API has no login, forgot-password, reset-password or resend-verification endpoints. The client then calls the API with the Firebase ID token.
+
 | Method | Path | Notes |
 |---|---|---|
-| POST | `/auth/register` | Creates user record after provider sign-up (or server-side via provider admin SDK); returns user |
-| POST | `/auth/login` | Only if provider requires server mediation; otherwise SDK login + `GET /auth/me` |
-| POST | `/auth/logout` | Revokes refresh tokens at provider |
-| POST | `/auth/forgot-password` | Always 200 (no account enumeration) |
-| POST | `/auth/reset-password` | |
-| POST | `/auth/verify-email/resend` | |
-| GET | `/auth/me` | User + memberships (tenant id, name, role, permissions) |
+| POST | `/auth/register` | Body `{ fullName, phone? }`. Creates our user record for the signed-in identity (email taken from the token). `201` when created, `200` if this identity is already registered, `409 EMAIL_IN_USE` if another identity has the email. Rate-limited to 10/min per IP. Returns the same body as `/auth/me`. |
+| POST | `/auth/logout` | `204`. Revokes refresh tokens at Firebase (all devices). Needs service-account credentials; `503 AUTH_NOT_CONFIGURED` without them. |
+| GET | `/auth/me` | `{ user: { id, email, fullName, emailVerified }, memberships: [{ tenantId, legalName, tradingName, tenantStatus, isOwner, role: { id, code, name }, permissions[] }] }` |
 
 ### 8.2 Tenants & settings
 | Method | Path | Permission |
 |---|---|---|
-| POST | `/tenants` | authenticated — creates tenant, owner membership, defaults (TEN-010) |
-| GET | `/tenants` | own memberships |
-| GET | `/tenants/:id` | `tenant.view` |
-| PATCH | `/tenants/:id` | `tenant.update` |
+| POST | `/tenants` | registered user — creates the tenant (UAE/AED/Asia-Dubai only for now), Owner membership, default settings and the 10 document sequences; `201` *(Sprint 1)* |
+| GET | `/tenants` | own active memberships, same shape as `/auth/me` memberships *(Sprint 1)* |
+| GET | `/tenants/:id` | `tenant.view` — `:id` selects the tenant; an `X-Tenant-Id` header, if sent, must match *(Sprint 1)* |
+| PATCH | `/tenants/:id` | `tenant.update` — audit row stores only changed fields *(Sprint 1)* |
 | POST | `/tenants/:id/complete-onboarding` | `tenant.update` |
 | GET / PATCH | `/tenants/:id/settings` | `tenant.view` / `tenant.settings.update` |
 | GET / PATCH | `/tenants/:id/numbering` | `tenant.settings.update` |

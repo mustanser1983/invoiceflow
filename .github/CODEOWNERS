@@ -1,15 +1,14 @@
-# Replace @TECH_LEAD with the tech lead's GitHub username (or a team such as @org/tech-leads)
-# before enabling "Require review from Code Owners" on main and develop.
+# Tech lead: @mustanser1983 (replace when a dedicated tech lead joins).
 
-*                                   @TECH_LEAD
+*                                   @mustanser1983
 
 # Areas that always need human review (see CONTRIBUTING.md)
-/apps/api/src/infrastructure/db/    @TECH_LEAD
-/apps/api/drizzle/                  @TECH_LEAD
-/apps/api/src/modules/auth/         @TECH_LEAD
-/apps/api/src/modules/permissions/  @TECH_LEAD
-/apps/api/src/modules/posting/      @TECH_LEAD
-/apps/api/src/modules/tax/          @TECH_LEAD
-/apps/api/src/modules/audit/        @TECH_LEAD
-/apps/api/src/common/money/         @TECH_LEAD
-/docs/                              @TECH_LEAD
+/apps/api/src/infrastructure/db/    @mustanser1983
+/apps/api/drizzle/                  @mustanser1983
+/apps/api/src/modules/auth/         @mustanser1983
+/apps/api/src/modules/permissions/  @mustanser1983
+/apps/api/src/modules/posting/      @mustanser1983
+/apps/api/src/modules/tax/          @mustanser1983
+/apps/api/src/modules/audit/        @mustanser1983
+/apps/api/src/common/money/         @mustanser1983
+/docs/                              @mustanser1983

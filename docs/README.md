@@ -20,15 +20,15 @@ Invoiceflow is a multi-tenant accounting and invoicing app for small businesses,
 | SECURITY.md | Threat model, access controls, incident response | Sprint 1 |
 | TEST_PLAN.md | QA strategy, traceability matrix, UAT scripts | Sprint 4 |
 | [CHANGELOG.md](../CHANGELOG.md) | Release history and approved change requests | Started |
-| [adr/](adr/README.md) | Architecture decision records: 0001–0003 drafted, awaiting approval | Sprint 0 |
+| [adr/](adr/README.md) | Architecture decision records: 0001–0003 accepted | Done |
 
-## Decisions awaiting approval
+## Sprint 0 decisions
 
-These are listed in PRD §7. The ones that block Sprint 0 are:
+Listed in PRD §7. The ones that blocked Sprint 0 are now accepted:
 
-- **D-01** ORM: Drizzle recommended ([ADR-0001](adr/0001-orm-drizzle.md)).
-- **D-02** Auth provider: Firebase Auth recommended ([ADR-0002](adr/0002-auth-firebase.md)).
-- **D-03** Object storage: AWS S3 in me-central-1 recommended ([ADR-0003](adr/0003-object-storage-s3-uae.md)).
+- **D-01** ORM: Drizzle — accepted ([ADR-0001](adr/0001-orm-drizzle.md)).
+- **D-02** Auth provider: Firebase Auth — accepted ([ADR-0002](adr/0002-auth-firebase.md)).
+- **D-03** Object storage: AWS S3 in me-central-1 — accepted ([ADR-0003](adr/0003-object-storage-s3-uae.md)).
 
 ## Rule
 

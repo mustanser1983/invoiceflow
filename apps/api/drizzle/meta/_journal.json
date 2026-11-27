@@ -8,6 +8,27 @@
       "when": 1794045505076,
       "tag": "0000_init",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1795789098880,
+      "tag": "0001_access_and_audit",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1795789145075,
+      "tag": "0002_seed_permissions_roles",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1795789152243,
+      "tag": "0003_rls_and_app_role",
+      "breakpoints": true
     }
   ]
 }
