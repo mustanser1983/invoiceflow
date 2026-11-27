@@ -247,10 +247,19 @@ Default mapping: Owner = all; Administrator = all except `subscription.manage`; 
 | HTTP | Code | When |
 |---|---|---|
 | 400 | `VALIDATION_ERROR` | DTO / business validation failed |
+| 400 | `TENANT_REQUIRED` | Tenant-scoped route called without `X-Tenant-Id` |
+| 400 | `ONBOARDING_INCOMPLETE` | Completing onboarding with required details missing (`details` lists them) |
 | 401 | `UNAUTHENTICATED` | Missing/invalid token |
 | 403 | `TENANT_ACCESS_DENIED` | No active membership |
 | 403 | `PERMISSION_DENIED` | Missing permission code |
-| 403 | `EMAIL_NOT_VERIFIED` | Posting before email verification |
+| 403 | `EMAIL_NOT_VERIFIED` | Posting, or accepting an invitation, before email verification |
+| 403 | `USER_NOT_REGISTERED` | Valid token but `POST /auth/register` not done yet |
+| 403 | `USER_DISABLED` | User account disabled |
+| 403 | `INVITATION_EMAIL_MISMATCH` | Invitation was sent to a different email |
+| 409 | `EMAIL_IN_USE` | Registering an email that another identity already uses |
+| 409 | `ALREADY_MEMBER` | Inviting someone who already has access |
+| 409 | `LAST_OWNER` | Change would leave a business with no active owner |
+| 410 | `INVITATION_INVALID` | Invitation expired, revoked or already used |
 | 402 | `SUBSCRIPTION_INACTIVE` | Suspended/cancelled tenant attempting a write |
 | 402 | `PLAN_LIMIT_REACHED` | Plan feature limit hit |
 | 404 | `NOT_FOUND` | Missing **or other tenant's** resource (never reveal existence) |
@@ -258,6 +267,8 @@ Default mapping: Owner = all; Administrator = all except `subscription.manage`; 
 | 409 | `INVALID_STATE_TRANSITION` | e.g. issuing a cancelled invoice |
 | 409 | `DUPLICATE` | Unique code/number clash, duplicate conversion |
 | 409 | `IDEMPOTENCY_CONFLICT` | Key reused with different payload |
+| 503 | `AUTH_NOT_CONFIGURED` | Firebase project or credentials not configured |
+| 503 | `DATABASE_NOT_CONFIGURED` | `DATABASE_URL` not set |
 | 422 | `ALLOCATION_EXCEEDS_BALANCE` | Allocation > receipt unallocated or invoice balance |
 | 422 | `CREDIT_EXCEEDS_INVOICE` | Credit note > creditable amount |
 | 429 | `RATE_LIMITED` | |
@@ -285,21 +296,23 @@ Sign-up, sign-in, password reset and email verification are done by the **Fireba
 | GET | `/tenants` | own active memberships, same shape as `/auth/me` memberships *(Sprint 1)* |
 | GET | `/tenants/:id` | `tenant.view` — `:id` selects the tenant; an `X-Tenant-Id` header, if sent, must match *(Sprint 1)* |
 | PATCH | `/tenants/:id` | `tenant.update` — audit row stores only changed fields *(Sprint 1)* |
-| POST | `/tenants/:id/complete-onboarding` | `tenant.update` |
-| GET / PATCH | `/tenants/:id/settings` | `tenant.view` / `tenant.settings.update` |
-| GET / PATCH | `/tenants/:id/numbering` | `tenant.settings.update` |
+| POST | `/tenants/:id/complete-onboarding` | `tenant.update` — `400 ONBOARDING_INCOMPLETE` lists missing details (emirate, address); idempotent *(Sprint 2)* |
+| GET / PATCH | `/tenants/:id/settings` | `tenant.view` / `tenant.settings.update` — flat key→value object; only known keys with validated values (`apps/api/src/modules/tenants/tenant-defaults.ts`) *(Sprint 2)* |
+| GET / PATCH | `/tenants/:id/numbering` | `tenant.view` / `tenant.settings.update` — PATCH `{ sequences: [{ documentType, prefix?, nextNumber?, padding? }] }`; next number can only move forward *(Sprint 2)* |
 | PUT | `/tenants/:id/logo` | body `{ documentId }` |
 
 ### 8.3 Users, roles, permissions
 | Method | Path | Permission |
 |---|---|---|
-| GET | `/users` | `user.view` |
-| POST | `/users/invite` | `user.invite` (plan `max_users` checked) |
-| POST | `/invitations/:token/accept` | authenticated |
-| PATCH | `/users/:id` | `user.update` (role, status) |
-| GET / POST | `/roles` | `role.view` / `role.manage` |
-| PATCH / DELETE | `/roles/:id` | `role.manage` (system roles immutable; in-use roles cannot be deleted) |
-| GET | `/permissions` | `role.view` |
+| GET | `/users` | `user.view` — members with role and status *(Sprint 2)* |
+| GET | `/users/invitations` | `user.view` — pending, unexpired invitations *(Sprint 2)* |
+| POST | `/users/invite` | `user.invite` — `{ email, roleId }`; replaces any pending invite for that email; expires in 7 days. **Until invitation emails exist, the response includes `acceptToken`** for the inviter to share; only its SHA-256 hash is stored. Plan `max_users` check arrives in Sprint 9. *(Sprint 2)* |
+| DELETE | `/users/invitations/:invitationId` | `user.invite` — revoke a pending invitation *(Sprint 2)* |
+| POST | `/invitations/accept` | registered user with a verified email matching the invitation — body `{ token }`; returns the caller's memberships *(Sprint 2)* |
+| PATCH | `/users/:userId` | `user.update` — `{ roleId?, status? }`; only an owner can grant or change owner access; `409 LAST_OWNER` *(Sprint 2)* |
+| GET | `/roles` | `role.view` — system and tenant roles with permission codes *(Sprint 2)* |
+| POST / PATCH / DELETE | `/roles`, `/roles/:id` | `role.manage` (system roles immutable; in-use roles cannot be deleted) — not built yet |
+| GET | `/permissions` | `role.view` *(Sprint 2)* |
 
 ### 8.4 Master data
 | Method | Path | Permission |
@@ -393,9 +406,9 @@ Sequence: validate customer and account → lock target invoices `FOR UPDATE` (o
 ### 8.10 Tax
 | Method | Path | Permission |
 |---|---|---|
-| GET / PATCH | `/tax/settings` | `tax.view` / `tax.settings.update` |
-| GET | `/tax/codes` | `tax.view` — global + tenant codes with current rate |
-| POST | `/tax/codes` | `tax.settings.update` — tenant-specific code |
+| GET / PATCH | `/tax/settings` | `tax.view` / `tax.settings.update` — registering needs a 15-digit TRN; switching registration resets default codes (registered: SR/SR; not registered: OS/SR-NR) unless given; unregistered businesses can only default sales to an out-of-scope code *(Sprint 2)* |
+| GET | `/tax/codes` | `tax.view` — country defaults + tenant codes with the rate in force today *(Sprint 2)* |
+| POST | `/tax/codes` | `tax.settings.update` — tenant-specific code with its first rate *(Sprint 2)* |
 | GET | `/tax/periods` | list of configured VAT periods |
 | GET | `/tax/summary?periodStart&periodEnd` | `report.tax` |
 | GET | `/tax/transactions?from&to&taxCode&direction` | `report.tax` |

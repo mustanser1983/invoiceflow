@@ -31,11 +31,17 @@ export async function migrateTestDb(pool: Pool): Promise<void> {
 export async function resetTestDb(pool: Pool): Promise<void> {
   await pool.query(`
     DELETE FROM audit_logs;
+    DELETE FROM tenant_tax_settings;
+    DELETE FROM tax_rates WHERE tax_code_id IN (SELECT id FROM tax_codes WHERE tenant_id IS NOT NULL);
+    DELETE FROM tax_codes WHERE tenant_id IS NOT NULL;
     DELETE FROM idempotency_keys;
     DELETE FROM document_sequences;
     DELETE FROM tenant_settings;
     DELETE FROM user_invitations;
+    -- The keep-an-owner trigger would block wiping every membership; only the owner can do this.
+    ALTER TABLE tenant_memberships DISABLE TRIGGER tenant_memberships_keep_an_owner;
     DELETE FROM tenant_memberships;
+    ALTER TABLE tenant_memberships ENABLE TRIGGER tenant_memberships_keep_an_owner;
     DELETE FROM role_permissions WHERE role_id IN (SELECT id FROM roles WHERE tenant_id IS NOT NULL);
     DELETE FROM roles WHERE tenant_id IS NOT NULL;
     DELETE FROM users;

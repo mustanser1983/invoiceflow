@@ -8,10 +8,21 @@ import { DbModule } from './infrastructure/db/db.module.js';
 import { AuditModule } from './modules/audit/audit.module.js';
 import { AuthModule } from './modules/auth/auth.module.js';
 import { HealthModule } from './modules/health/health.module.js';
+import { TaxModule } from './modules/tax/tax.module.js';
 import { TenantsModule } from './modules/tenants/tenants.module.js';
+import { UsersModule } from './modules/users/users.module.js';
 
 @Module({
-  imports: [DbModule, AuthProviderModule, AuditModule, HealthModule, AuthModule, TenantsModule],
+  imports: [
+    DbModule,
+    AuthProviderModule,
+    AuditModule,
+    HealthModule,
+    AuthModule,
+    TenantsModule,
+    TaxModule,
+    UsersModule,
+  ],
   providers: [
     { provide: APP_GUARD, useClass: RateLimitGuard },
     { provide: APP_GUARD, useClass: AuthGuard },

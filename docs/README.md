@@ -16,7 +16,7 @@ Invoiceflow is a multi-tenant accounting and invoicing app for small businesses,
 | Document | Purpose | Needed by |
 |---|---|---|
 | ACCOUNTING_RULES.md | Full calculation and rounding rules, P&L treatment | Sprint 4 |
-| TAX_RULES_UAE.md | UAE VAT codes, invoice requirements, adviser sign-off | Sprint 2 (draft), Sprint 10 (signed) |
+| [TAX_RULES_UAE.md](TAX_RULES_UAE.md) | UAE VAT codes, invoice requirements, adviser sign-off | Draft started (Sprint 2); signed off in Sprint 10 |
 | SECURITY.md | Threat model, access controls, incident response | Sprint 1 |
 | TEST_PLAN.md | QA strategy, traceability matrix, UAT scripts | Sprint 4 |
 | [CHANGELOG.md](../CHANGELOG.md) | Release history and approved change requests | Started |
