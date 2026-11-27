@@ -27,8 +27,14 @@ All notable changes to Invoiceflow are recorded here. Format follows [Keep a Cha
   - New businesses get tax settings (not VAT registered).
   - `docs/TAX_RULES_UAE.md` draft.
 
+- Sprint 3 — customers, suppliers and products (S3-1 – S3-3, S3-5 – S3-8, S3-10, backend):
+  - Migrations `0006`–`0007`: `customers`, `suppliers`, `items`, `expense_categories` with RLS, `(tenant_id, id)` keys for future composite FKs, trigram name-search indexes; `item` numbering; 13 default expense categories for existing and new businesses.
+  - Endpoints: `/customers` and `/suppliers` (list, search, duplicates, get, create, update, deactivate), `/items`, `/expense-categories`.
+  - Paginated list responses (`meta`), shared document-number allocator (`allocateNumber`) and code generation that skips hand-typed codes.
+
 ### Changed
 - ADR-0001 – 0003 accepted (2026-11-27). CODEOWNERS points at @mustanser1983.
 - CI Postgres 16 → 18 (matches Neon); CI now runs integration tests against a throwaway database.
 - CI pins Flutter 3.47.9: Flutter 3.50 deprecates `package:flutter/material.dart` in favour of `package:material_ui`, which fails `flutter analyze`.
+- CI caches Gradle downloads for the mobile build after Maven Central rate-limited a run (HTTP 429).
 - RLS uses `ENABLE` plus `SET LOCAL ROLE invoiceflow_app` instead of `FORCE` (DATABASE_ERD.md §2.1).

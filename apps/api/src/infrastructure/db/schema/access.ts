@@ -179,6 +179,7 @@ export const DOCUMENT_TYPES = [
   'transfer',
   'customer',
   'supplier',
+  'item',
 ] as const;
 export type DocumentType = (typeof DOCUMENT_TYPES)[number];
 
@@ -197,7 +198,7 @@ export const documentSequences = pgTable(
     primaryKey({ columns: [t.tenantId, t.documentType] }),
     check(
       'document_sequences_type_chk',
-      sql`${t.documentType} IN ('quotation','invoice','credit_note','receipt','purchase_bill','supplier_payment','expense','transfer','customer','supplier')`,
+      sql`${t.documentType} IN ('quotation','invoice','credit_note','receipt','purchase_bill','supplier_payment','expense','transfer','customer','supplier','item')`,
     ),
     check('document_sequences_next_chk', sql`${t.nextNumber} > 0`),
     check('document_sequences_padding_chk', sql`${t.padding} BETWEEN 1 AND 12`),

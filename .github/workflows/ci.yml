@@ -101,6 +101,13 @@ jobs:
       - run: flutter pub get
       - run: flutter analyze
       - run: flutter test
+      # Cache Gradle downloads; Maven Central rate-limits (HTTP 429) shared CI runners.
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-${{ runner.os }}-flutter-3.47.9-v1
       - run: flutter build apk --debug --dart-define-from-file=config/dev.json
       - uses: actions/upload-artifact@v4
         with:
