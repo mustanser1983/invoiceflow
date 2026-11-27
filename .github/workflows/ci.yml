@@ -18,7 +18,8 @@ jobs:
     runs-on: ubuntu-latest
     services:
       postgres:
-        image: postgres:16
+        # Match the Neon server version.
+        image: postgres:18
         env:
           POSTGRES_USER: invoiceflow
           POSTGRES_PASSWORD: invoiceflow
@@ -30,6 +31,8 @@ jobs:
     env:
       DATABASE_URL: postgresql://invoiceflow:invoiceflow@localhost:5432/invoiceflow_ci
       DATABASE_URL_DIRECT: postgresql://invoiceflow:invoiceflow@localhost:5432/invoiceflow_ci
+      # Integration tests delete all data in this database.
+      TEST_DATABASE_URL: postgresql://invoiceflow:invoiceflow@localhost:5432/invoiceflow_test
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
@@ -40,7 +43,10 @@ jobs:
       - run: npm run format:check
       - run: npm run lint -w apps/api
       - run: npm run typecheck -w apps/api
-      - run: npm test -w apps/api
+      - name: Create the integration-test database
+        run: PGPASSWORD=invoiceflow createdb -h localhost -U invoiceflow invoiceflow_test
+      - name: Unit, e2e and integration tests (RLS, tenant isolation, permissions)
+        run: npm test -w apps/api
       - run: npm run build -w apps/api
       - name: Apply migrations to a fresh database
         run: npm run db:migrate -w apps/api

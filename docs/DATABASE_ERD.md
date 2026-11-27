@@ -32,12 +32,13 @@
 
 ### 1.1 Database roles
 
-| Role | Used by | Privileges |
-|---|---|---|
-| `invoiceflow_owner` | Migrations only (CI) | DDL |
-| `invoiceflow_app` | NestJS tenant API | DML on tenant tables, **subject to RLS** (`NOBYPASSRLS`) |
-| `invoiceflow_admin` | Super Admin API | Cross-tenant read via explicit admin policies; every query audited |
-| `invoiceflow_report` | Reporting (optional read replica) | `SELECT`, subject to RLS |
+| Role | Kind | Used by | Privileges |
+|---|---|---|---|
+| Owner (e.g. `neondb_owner`) | Login | Migrations only | DDL; owns all tables. On Neon it also has `BYPASSRLS`. |
+| `invoiceflow_app` | **No login** (created by migration 0003) | Every API transaction, via `SET LOCAL ROLE` | Least-privilege DML per table, **subject to RLS** (`NOBYPASSRLS`, owns nothing); `audit_logs` INSERT/SELECT only |
+| API login role | Login | NestJS tenant API connection | Membership in `invoiceflow_app` with `SET` only. In development this is the owner; **staging and production must use a separate non-owner login** so a query that skips the transaction manager can't bypass RLS. |
+| `invoiceflow_admin` | — | Super Admin API (Sprint 9) | Cross-tenant read via explicit admin policies; every query audited |
+| `invoiceflow_report` | — | Reporting (optional read replica) | `SELECT`, subject to RLS |
 
 ---
 
@@ -45,39 +46,43 @@
 
 ### 2.1 Tenant context
 
-Tenant context is derived from the authenticated user's **membership**, never from a client-supplied value alone. The API sets it **transaction-locally** so pooled connections (Neon PgBouncer, transaction mode) never leak context:
+Tenant context is derived from the authenticated user's **membership**, never from a client-supplied value alone. `TransactionManager` (`apps/api/src/infrastructure/db/transaction-manager.ts`) starts every request transaction by switching to the restricted role and setting context, all **transaction-locally**, so pooled connections (Neon PgBouncer, transaction mode) never leak role or context:
 
 ```sql
 BEGIN;
-SELECT set_config('app.tenant_id', $1, true);   -- true = local to this transaction
-SELECT set_config('app.user_id',   $2, true);
+SET LOCAL ROLE invoiceflow_app;                       -- RLS now applies, whatever the login role
+SELECT set_config('app.tenant_id',    $1, true),      -- true = local to this transaction
+       set_config('app.user_id',      $2, true),
+       set_config('app.auth_subject', $3, true);      -- '<provider>:<uid>', used before the user id is known
 -- ... queries ...
 COMMIT;
 ```
 
-Every tenant-scoped request runs inside a transaction. Queries outside a transaction see no tenant rows (policy evaluates against NULL).
+Policies read context through `app.tenant_id()`, `app.user_id()` and `app.auth_subject()`, which return NULL when unset, so a transaction without context sees no tenant rows. An integration test checks that a pooled connection reused after a request carries neither the role nor the context.
+
+**Why ENABLE and not FORCE.** RLS applies to `invoiceflow_app` because it neither owns the tables nor has `BYPASSRLS`; `SET LOCAL ROLE` makes that true for every API query. Tables use `ENABLE ROW LEVEL SECURITY` without `FORCE`, so the owner can still run migrations and seed system data. (`FORCE` would not help on Neon anyway: the owner there has `BYPASSRLS`.)
 
 ### 2.2 Standard policy (applied to every tenant-owned table)
 
 ```sql
 ALTER TABLE customers ENABLE ROW LEVEL SECURITY;
-ALTER TABLE customers FORCE ROW LEVEL SECURITY;
 
-CREATE POLICY tenant_isolation ON customers
-  USING      (tenant_id = current_setting('app.tenant_id', true)::uuid)
-  WITH CHECK (tenant_id = current_setting('app.tenant_id', true)::uuid);
+CREATE POLICY tenant_isolation ON customers FOR ALL TO invoiceflow_app
+  USING      (tenant_id = app.tenant_id())
+  WITH CHECK (tenant_id = app.tenant_id());
 ```
 
-A migration test asserts that **every** table with a `tenant_id` column has RLS enabled, forced, and a `tenant_isolation` policy.
+An integration test asserts that **every** table with a `tenant_id` column has RLS enabled and at least one policy, that `invoiceflow_app` cannot bypass RLS or own tables, and that it cannot update or delete audit logs.
 
 ### 2.3 Tables with special policies
 
 | Table | Policy |
 |---|---|
-| `tenants` | Visible where `id = app.tenant_id`, or to membership lookup via a `SECURITY DEFINER` function `my_tenants(user_id)` |
-| `users` | Row visible to itself; tenant members visible via membership join |
-| `tenant_memberships` | Rows for current tenant, plus own rows (for tenant switcher) |
-| `roles` | `tenant_id IS NULL` (system templates, read-only) OR current tenant |
+| `tenants` | Current tenant, plus tenants where the current user has an active membership (tenant switcher). Insert only with `id = app.tenant_id()`. |
+| `users` | Yourself (`app.user_id()`), the identity being signed in (`app.auth_subject()`), and members of the current tenant |
+| `tenant_memberships` | Rows for current tenant, plus own rows (for tenant switcher). Writes only within the current tenant; a trigger rejects roles from another tenant. |
+| `roles` | `tenant_id IS NULL` (system templates, read-only) OR current tenant OR a role the user holds in another tenant (switcher display) |
+| `role_permissions` | Follows role visibility; writable only for the current tenant's own roles |
 | `tax_codes`, `tax_rates` | `tenant_id IS NULL` (global) OR current tenant |
 | `permissions`, `subscription_plans`, `plan_features`, `countries`, `currencies` | Global reference data, read-only to app role, no RLS |
 | `audit_logs` | Insert any; select current tenant only (platform events `tenant_id IS NULL` visible to admin role only) |

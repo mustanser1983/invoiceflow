@@ -18,12 +18,13 @@
   },
   "jest": {
     "testEnvironment": "node",
+    "testTimeout": 60000,
     "rootDir": ".",
     "roots": [
       "<rootDir>/src",
       "<rootDir>/test"
     ],
-    "testRegex": ".*\\.(spec|e2e-spec)\\.ts$",
+    "testRegex": ".*\\.(spec|e2e-spec|int-spec)\\.ts$",
     "extensionsToTreatAsEsm": [
       ".ts"
     ],
@@ -42,7 +43,8 @@
     "collectCoverageFrom": [
       "src/**/*.ts",
       "!src/main.ts"
-    ]
+    ],
+    "maxWorkers": 1
   },
   "dependencies": {
     "@nestjs/common": "12.4.0",
@@ -50,9 +52,11 @@
     "@nestjs/platform-express": "12.4.0",
     "dotenv": "18.0.9",
     "drizzle-orm": "0.45.4",
+    "firebase-admin": "14.5.1",
     "pg": "8.23.1",
     "reflect-metadata": "0.2.2",
-    "rxjs": "7.8.2"
+    "rxjs": "7.8.2",
+    "zod": "4.6.7"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",

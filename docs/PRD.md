@@ -401,9 +401,9 @@ These items were not fully specified in the baseline and are resolved here or fl
 
 | # | Item | Resolution in this document set | Status |
 |---|---|---|---|
-| D-01 | ORM: Prisma or Drizzle | **Recommend Drizzle**: reviewable SQL migrations, and RLS, triggers and exclusion constraints live in the same migration files. See [ADR-0001](adr/0001-orm-drizzle.md). | Needs approval |
-| D-02 | Authentication provider | Abstracted behind `AuthProvider` interface. Recommend **Firebase Auth** (Flutter SDK maturity, cost at low volume); separate MFA project for Super Admins. See [ADR-0002](adr/0002-auth-firebase.md). | Needs approval |
-| D-03 | Object storage | Recommend **AWS S3 in me-central-1** for UAE data residency. See [ADR-0003](adr/0003-object-storage-s3-uae.md). | Needs approval |
+| D-01 | ORM: Prisma or Drizzle | **Recommend Drizzle**: reviewable SQL migrations, and RLS, triggers and exclusion constraints live in the same migration files. See [ADR-0001](adr/0001-orm-drizzle.md). | Approved 2026-11-27 |
+| D-02 | Authentication provider | Abstracted behind `AuthProvider` interface. Recommend **Firebase Auth** (Flutter SDK maturity, cost at low volume); separate MFA project for Super Admins. See [ADR-0002](adr/0002-auth-firebase.md). | Approved 2026-11-27 |
+| D-03 | Object storage | Recommend **AWS S3 in me-central-1** for UAE data residency. See [ADR-0003](adr/0003-object-storage-s3-uae.md). | Approved 2026-11-27 |
 | D-13 | Database region | Neon may not offer a UAE region; decide whether database residency matters. | Open |
 | D-04 | Supplier payments | Baseline required partial supplier payments but had no table. Added `supplier_payments` + `supplier_payment_allocations`. | Added |
 | D-05 | Credit note lines | Baseline `credit_notes` had no lines; VAT reporting needs them. Added `credit_note_items`. | Added |

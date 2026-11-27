@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| **Status** | Proposed |
+| **Status** | Accepted (2026-11-27) |
 | **Date** | 2026-11-06 |
 | **Deciders** | Product owner, tech lead |
 | **PRD ref** | D-03 |
